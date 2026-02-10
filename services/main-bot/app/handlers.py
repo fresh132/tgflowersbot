@@ -144,16 +144,19 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     location = data.get("location") or user_locations.get(user.id)
     pickup_time = data.get("pickup_time")
 
-    # Build the payload for the order-service.
+    # Build the payload for the order-service (must match OrderCreate schema).
     order_payload = {
         "user_id": user.id,
-        "user_name": user.first_name,
         "items": items,
         "delivery_type": delivery_type,
         "address": address,
-        "location": location,
         "pickup_time": pickup_time,
     }
+
+    # Flatten location into latitude/longitude fields.
+    if isinstance(location, dict):
+        order_payload["latitude"] = location.get("latitude")
+        order_payload["longitude"] = location.get("longitude")
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -172,13 +175,13 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # Build a user-friendly confirmation message.
     order_id = order.get("id", "N/A")
-    total = order.get("total", 0)
+    total = order.get("total_amount", 0)
 
     items_text = ""
     for item in items:
-        name = item.get("name", "\u0422\u043e\u0432\u0430\u0440")
+        name = item.get("product_name", item.get("name", "\u0422\u043e\u0432\u0430\u0440"))
         qty = item.get("quantity", 1)
-        price = item.get("price", 0)
+        price = item.get("product_price", item.get("price", 0))
         items_text += f"  \u2022 {name} x{qty} \u2014 {price} \u0440\u0443\u0431.\n"
 
     if delivery_type == "pickup":
@@ -240,7 +243,7 @@ async def my_orders_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
     for order in orders:
         order_id = order.get("id", "N/A")
         status = order.get("status", "\u043d\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u043e")
-        total = order.get("total", 0)
+        total = order.get("total_amount", 0)
         delivery_type = order.get("delivery_type", "")
         dtype_label = "\U0001f3ea \u0421\u0430\u043c\u043e\u0432\u044b\u0432\u043e\u0437" if delivery_type == "pickup" else "\U0001f69a \u0414\u043e\u0441\u0442\u0430\u0432\u043a\u0430"
         text += (

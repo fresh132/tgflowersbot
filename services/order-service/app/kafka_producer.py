@@ -13,12 +13,20 @@ producer: AIOKafkaProducer | None = None
 
 async def start_kafka_producer() -> None:
     global producer
-    producer = AIOKafkaProducer(
-        bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
-        value_serializer=lambda v: json.dumps(v, default=str).encode("utf-8"),
-    )
-    await producer.start()
-    logger.info("Kafka producer started (bootstrap_servers=%s)", KAFKA_BOOTSTRAP_SERVERS)
+    try:
+        producer = AIOKafkaProducer(
+            bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+            value_serializer=lambda v: json.dumps(v, default=str).encode("utf-8"),
+        )
+        await producer.start()
+        logger.info("Kafka producer started (bootstrap_servers=%s)", KAFKA_BOOTSTRAP_SERVERS)
+    except Exception:
+        logger.warning(
+            "Failed to connect to Kafka at %s. Events will not be published.",
+            KAFKA_BOOTSTRAP_SERVERS,
+            exc_info=True,
+        )
+        producer = None
 
 
 async def stop_kafka_producer() -> None:

@@ -53,17 +53,18 @@ async def _handle_order_created(data: dict) -> None:
     """Handle an order_created event: insert OrderMetric and upsert PopularProduct for each item."""
     async with async_session() as session:
         async with session.begin():
+            items = data.get("items", [])
+            items_count = data.get("items_count", len(items))
             metric = OrderMetric(
                 order_id=data["order_id"],
                 user_id=data["user_id"],
                 total_amount=data["total_amount"],
-                items_count=data["items_count"],
+                items_count=items_count,
                 delivery_type=data.get("delivery_type", "unknown"),
                 created_at=datetime.utcnow(),
             )
             session.add(metric)
 
-            items = data.get("items", [])
             for item in items:
                 product_id = item["product_id"]
                 product_name = item.get("product_name", "Unknown")
@@ -107,12 +108,12 @@ async def consume() -> None:
             async for message in consumer:
                 try:
                     data = message.value
-                    event_type = data.get("event_type", "")
+                    event_type = data.get("event", data.get("event_type", ""))
 
                     if message.topic == "product_views" or event_type == "product_view":
                         await _handle_product_view(data)
                         logger.debug("Processed product_view event: %s", data)
-                    elif message.topic == "order_events" or event_type == "order_created":
+                    elif message.topic == "order_events" and event_type in ("order_created", ""):
                         await _handle_order_created(data)
                         logger.debug("Processed order_created event: %s", data)
                     else:

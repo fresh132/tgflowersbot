@@ -47,6 +47,7 @@ async def get_product(product_id: int, db: AsyncSession = Depends(get_db)):
         {
             "event": "product_view",
             "product_id": product.id,
+            "product_name": product.name,
             "timestamp": datetime.datetime.utcnow().isoformat(),
         },
     )

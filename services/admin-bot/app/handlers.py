@@ -58,11 +58,11 @@ async def metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
         total_orders = data.get("total_orders", 0)
         total_revenue = data.get("total_revenue", 0)
-        average_order = data.get("average_order_value", 0)
-        today_orders = data.get("today_orders", 0)
+        average_order = data.get("avg_order_value", 0)
+        today_orders = data.get("orders_today", 0)
 
-        top_by_views = data.get("top_products_by_views", [])
-        top_by_orders = data.get("top_products_by_orders", [])
+        top_by_views = data.get("popular_by_views", [])
+        top_by_orders = data.get("popular_by_orders", [])
 
         lines = [
             "\U0001f4c8 \u041c\u0435\u0442\u0440\u0438\u043a\u0438 \u043c\u0430\u0433\u0430\u0437\u0438\u043d\u0430",
@@ -79,8 +79,8 @@ async def metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 "\U0001f441 \u0422\u043e\u043f-5 \u043f\u043e \u043f\u0440\u043e\u0441\u043c\u043e\u0442\u0440\u0430\u043c:"
             )
             for i, product in enumerate(top_by_views[:5], start=1):
-                name = product.get("name", "\u2014")
-                views = product.get("views", 0)
+                name = product.get("product_name", "\u2014")
+                views = product.get("view_count", 0)
                 lines.append(f"  {i}. {name} \u2014 {views} \u043f\u0440\u043e\u0441\u043c.")
             lines.append("")
 
@@ -89,8 +89,8 @@ async def metrics_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 "\U0001f6d2 \u0422\u043e\u043f-5 \u043f\u043e \u0437\u0430\u043a\u0430\u0437\u0430\u043c:"
             )
             for i, product in enumerate(top_by_orders[:5], start=1):
-                name = product.get("name", "\u2014")
-                orders_count = product.get("orders", 0)
+                name = product.get("product_name", "\u2014")
+                orders_count = product.get("order_count", 0)
                 lines.append(f"  {i}. {name} \u2014 {orders_count} \u0437\u0430\u043a.")
             lines.append("")
 
@@ -155,7 +155,7 @@ async def orders_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             order_id = order.get("id", "?")
             status_raw = order.get("status", "unknown")
             status_label = _ORDER_STATUS_LABELS.get(status_raw, status_raw)
-            total = order.get("total", 0)
+            total = order.get("total_amount", 0)
             created = order.get("created_at", "")[:16].replace("T", " ")
             lines.append(
                 f"\u2022 #{order_id}  {status_label}\n"
